@@ -163,10 +163,10 @@ const copyToClipboard = async (text: string | null, type: 'txid' | 'wallet') => 
 
 const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolean) => {
   return [
-    'relative flex flex-col break-words min-w-[120px] max-w-[85%] md:max-w-[70%] text-sm overflow-hidden',
+    'relative flex flex-col break-words min-w-[120px] max-w-[85%] md:max-w-[65%] text-sm',
     sent
-      ? 'bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/95' // Mauve with dark base text
-      : 'bg-[#45475a] text-[#cdd6f4] hover:bg-[#45475a]/95', // Surface1 with text
+      ? 'bg-gradient-to-br from-[#cba6f7] to-[#b4befe] text-[#11111b] hover:brightness-105' // Gradient from Mauve to Lavender
+      : 'bg-gradient-to-br from-[#313244] to-[#45475a] text-[#cdd6f4] hover:brightness-105', // Gradient from Surface0 to Surface1
     // First message in group
     isFirst && (sent ? 'rounded-t-2xl rounded-l-2xl' : 'rounded-t-2xl rounded-r-2xl'),
     // Last message in group
@@ -176,30 +176,40 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     // Middle messages
     !isFirst && !isLast && (sent ? 'rounded-l-2xl' : 'rounded-r-2xl'),
     // Add shadow and hover effect
-    'shadow-sm hover:shadow-md transition-all duration-200'
+    'shadow-lg hover:shadow-xl transition-all duration-300 ease-out'
   ]
 }
 </script>
 
 <template>
-  <Card class="h-[calc(100vh-2rem)] bg-[#1e1e2e] border-[#313244] shadow-xl overflow-hidden relative z-0">
+  <Card
+    class="h-[calc(100vh-2rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825] border-[#313244] shadow-2xl overflow-hidden relative z-0">
     <CardHeader
-      class="flex flex-row items-center justify-between border-b border-[#313244] px-4 bg-[#181825] relative min-h-[4rem]">
+      class="flex flex-row items-center justify-between border-b border-[#313244]/50 px-6 py-4 bg-[#181825]/95 backdrop-blur-md relative min-h-[22.5rem] shadow-lg">
       <!-- Left side with avatar and name -->
-      <div class="flex items-center gap-4 flex-shrink-0 z-10">
-        <div class="relative">
-          <Avatar class="h-10 w-10 bg-[#313244] ring-2 ring-[#cba6f7] ring-offset-2 ring-offset-[#181825]">
-            <AvatarFallback class="text-base font-medium text-[#cdd6f4]">SA</AvatarFallback>
+      <div class="flex items-center gap-5 flex-shrink-0 z-10">
+        <div class="relative group">
+          <div
+            class="absolute -inset-0.5 bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] rounded-full opacity-75 group-hover:opacity-100 blur transition duration-200">
+          </div>
+          <Avatar
+            class="relative h-11 w-11 bg-[#313244] ring-2 ring-[#cba6f7] ring-offset-2 ring-offset-[#181825] shadow-md transition-all duration-200 hover:shadow-lg group-hover:scale-105">
+            <AvatarFallback class="text-base font-semibold text-[#cdd6f4]">SA</AvatarFallback>
           </Avatar>
         </div>
         <div class="hidden sm:block">
-          <p class="font-medium leading-none text-[#cdd6f4]">Support Agent</p>
+          <p class="font-semibold leading-none text-[#cdd6f4] tracking-tight">Support Agent</p>
+          <div class="flex items-center gap-1.5 mt-1.5">
+            <div class="w-2 h-2 rounded-full bg-[#a6e3a1] animate-pulse"></div>
+            <p class="text-sm text-[#a6adc8]">Online</p>
+          </div>
         </div>
       </div>
 
       <!-- Center badge -->
       <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div class="text-xs text-[#a6adc8] bg-[#313244] px-2.5 py-1 rounded-full whitespace-nowrap">
+        <div
+          class="text-xs font-medium text-[#cdd6f4] bg-gradient-to-r from-[#313244]/80 to-[#45475a]/80 backdrop-blur-sm px-4 py-2 rounded-full whitespace-nowrap shadow-lg border border-[#45475a]/50">
           Customer Support
         </div>
       </div>
@@ -208,15 +218,16 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
       <div class="w-[120px]"></div>
     </CardHeader>
 
-    <CardContent class="p-0 h-[calc(100%-8rem)] bg-[#1e1e2e]">
+    <CardContent class="p-0 h-[calc(100%-8rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825]">
       <ScrollArea class="h-full" type="hover">
-        <div class="flex flex-col gap-3 px-4 py-4">
+        <div class="flex flex-col gap-4 p-6">
           <template v-for="(group, groupIndex) in groupedMessages" :key="groupIndex">
             <!-- Date separator -->
             <div v-if="groupIndex === 0 ||
               formatDate(group.timestamp) !== formatDate(groupedMessages[groupIndex - 1].timestamp)"
-              class="flex justify-center my-4">
-              <div class="px-3.5 py-1.5 rounded-full bg-[#313244]/50 text-xs font-medium text-[#cdd6f4] shadow-sm">
+              class="flex justify-center my-8">
+              <div
+                class="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#313244]/30 to-[#45475a]/30 text-xs font-medium text-[#a6adc8] shadow-lg backdrop-blur-sm border border-[#45475a]/20">
                 {{ formatDate(group.timestamp) }}
               </div>
             </div>
@@ -224,49 +235,47 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
             <!-- Message group -->
             <div :class="getMessageGroupClasses(group.sent)" class="w-full">
               <div class="flex flex-col gap-[3px] w-full" :class="{ 'items-end': group.sent }">
-                <div v-for="(message, messageIndex) in group.messages" :key="message.id" 
-                  :class="[
-                    getMessageBubbleClasses(
-                      group.sent,
-                      messageIndex === 0,
-                      messageIndex === group.messages.length - 1
-                    ),
-                    'w-fit'
-                  ]"
-                >
+                <div v-for="(message, messageIndex) in group.messages" :key="message.id" :class="[
+                  getMessageBubbleClasses(
+                    group.sent,
+                    messageIndex === 0,
+                    messageIndex === group.messages.length - 1
+                  ),
+                  'w-fit backdrop-blur-sm'
+                ]">
                   <!-- Message content wrapper -->
-                  <div class="px-4 py-3 break-words whitespace-pre-wrap">
+                  <div class="px-5 py-3.5 break-words whitespace-pre-wrap">
                     <span class="select-text">{{ message.content }}</span>
                   </div>
 
                   <!-- Action buttons for txid/wallet -->
                   <div v-if="hasTxid(message.content) || hasWallet(message.content)"
-                    class="flex flex-col sm:flex-row flex-wrap gap-2 px-4 pb-3 pt-2 mt-0 border-t border-[#1e1e2e]/10">
+                    class="flex flex-col sm:flex-row flex-wrap gap-2.5 px-5 pb-3.5 pt-2.5 mt-0.5 border-t border-[#1e1e2e]/10">
                     <!-- Transaction actions -->
-                    <div v-if="hasTxid(message.content)" class="flex items-center gap-1.5 flex-wrap">
+                    <div v-if="hasTxid(message.content)" class="flex items-center gap-2.5 flex-wrap">
                       <button @click="copyToClipboard(getTxid(message.content), 'txid')"
-                        class="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-[#313244] hover:bg-[#45475a] active:bg-[#45475a]/80 transition-all duration-200 text-xs font-medium select-none text-[#89b4fa] shadow-sm hover:shadow min-w-[90px]">
+                        class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#89b4fa] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[100px] border border-[#45475a]/30">
                         <Copy class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">Copy txid</span>
                       </button>
                       <a v-if="getTxid(message.content)" :href="`https://mempool.space/tx/${getTxid(message.content)}`"
                         target="_blank" rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-[#313244] hover:bg-[#45475a] active:bg-[#45475a]/80 transition-all duration-200 text-xs font-medium select-none text-[#89b4fa] shadow-sm hover:shadow min-w-[120px]">
+                        class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#89b4fa] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[130px] border border-[#45475a]/30">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">View on mempool</span>
                       </a>
                     </div>
                     <!-- Wallet actions -->
-                    <div v-if="hasWallet(message.content)" class="flex items-center gap-1.5 flex-wrap">
+                    <div v-if="hasWallet(message.content)" class="flex items-center gap-2.5 flex-wrap">
                       <button @click="copyToClipboard(getWallet(message.content), 'wallet')"
-                        class="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-[#313244] hover:bg-[#45475a] active:bg-[#45475a]/80 transition-all duration-200 text-xs font-medium select-none text-[#f9e2af] shadow-sm hover:shadow min-w-[100px]">
+                        class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#f9e2af] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[110px] border border-[#45475a]/30">
                         <Copy class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">Copy wallet</span>
                       </button>
                       <a v-if="getWallet(message.content)"
                         :href="`https://mempool.space/address/${getWallet(message.content)}`" target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-[#313244] hover:bg-[#45475a] active:bg-[#45475a]/80 transition-all duration-200 text-xs font-medium select-none text-[#f9e2af] shadow-sm hover:shadow min-w-[120px]">
+                        class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#f9e2af] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[130px] border border-[#45475a]/30">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">View on mempool</span>
                       </a>
@@ -274,7 +283,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                   </div>
                 </div>
               </div>
-              <span class="text-[11px] text-[#6c7086] px-2 mt-1 select-none" :class="{ 'self-end': group.sent }">
+              <span class="text-[11px] text-[#6c7086] px-3 mt-2 select-none" :class="{ 'self-end': group.sent }">
                 {{ formatTime(group.timestamp) }}
               </span>
             </div>
@@ -284,15 +293,15 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
       </ScrollArea>
     </CardContent>
 
-    <CardFooter class="border-t border-[#313244] bg-[#181825] p-4">
-      <form @submit="sendMessage" class="flex w-full items-center space-x-3">
+    <CardFooter class="border-t border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md p-6 shadow-xl">
+      <form @submit="sendMessage" class="flex w-full items-center gap-4">
         <Input id="message" v-model="input" placeholder="Type your message..."
-          class="flex-1 bg-[#1e1e2e] border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] focus:border-[#cba6f7] transition-all shadow-sm"
+          class="flex-1 bg-[#1e1e2e]/90 border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] focus:border-[#cba6f7] transition-all duration-300 shadow-lg hover:border-[#45475a] rounded-xl h-11"
           autocomplete="off" />
         <Button type="submit" size="icon" :disabled="inputLength === 0 || isSending"
-          class="bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/90 active:bg-[#cba6f7]/80 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md h-10 w-10 flex-shrink-0">
+          class="bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] hover:brightness-110 active:brightness-90 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:hover:shadow-lg h-11 w-11 rounded-xl flex-shrink-0">
           <Send v-if="!isSending" class="h-4 w-4" />
-          <div v-else class="h-4 w-4 animate-spin rounded-full border-2 border-[#1e1e2e] border-r-transparent" />
+          <div v-else class="h-4 w-4 animate-spin rounded-full border-2 border-[#11111b] border-r-transparent" />
           <span class="sr-only">{{ isSending ? 'Sending...' : 'Send' }}</span>
         </Button>
       </form>
@@ -302,18 +311,18 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 
 <style scoped>
 .animate-in {
-  animation: animate-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: animate-in 0.3s cubic-bezier(0.21, 1.02, 0.73, 1);
 }
 
 @keyframes animate-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px) scale(0.98);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -333,10 +342,10 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
   -webkit-user-select: text;
 }
 
-/* Improve scrollbar styling */
+/* Enhanced scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -345,7 +354,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 
 ::-webkit-scrollbar-thumb {
   background: #45475a;
-  border-radius: 4px;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -354,65 +363,70 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 
 :deep(.scrollarea-viewport) {
   height: 100%;
+  scroll-behavior: smooth;
 }
 
 :deep(.scrollarea-thumb-y) {
   z-index: 30;
+  width: 5px !important;
+  background: #45475a !important;
+  border-radius: 9999px !important;
+  transition: all 0.2s ease-in-out;
 }
 
-/* Update z-index styles */
-:deep(.fixed) {
-  z-index: 50;
+:deep(.scrollarea-thumb-y:hover) {
+  background: #585b70 !important;
+  width: 6px !important;
 }
 
-:deep(.absolute) {
-  z-index: 40;
+/* Improved focus styles */
+:focus-visible {
+  outline: 2px solid #cba6f7;
+  outline-offset: 2px;
+  transition: outline-offset 0.2s ease;
 }
 
-/* Ensure proper stacking for interactive elements */
-button,
-a {
-  position: relative;
-  z-index: 20;
+/* Enhanced button hover states */
+button:not(:disabled):hover,
+a:hover {
+  transform: translateY(-1px) scale(1.02);
 }
 
-.animate-in {
-  position: relative;
-  z-index: 10;
+button:not(:disabled):active,
+a:active {
+  transform: translateY(0) scale(0.98);
 }
 
-/* Add padding compensation for avatar */
-.avatar-wrapper {
-  padding: 2px;
-  margin: -2px;
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 
-/* Ensure proper header layout */
-:deep(.card-header) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  min-height: 4rem;
-  padding: 1rem;
+/* Glass morphism effects */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Remove the previous width-related styles and add these new ones */
-.w-fit {
-  width: fit-content;
+/* Gradient animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
-/* Remove these previous styles as they're now handled inline */
-.flex-col {
-  width: 100%;
-}
-
-.max-w-full {
-  max-width: 100%;
-}
-
-.items-end>div {
-  width: fit-content;
-  max-width: 100%;
+.bg-gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
 }
 </style>
