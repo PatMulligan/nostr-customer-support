@@ -163,7 +163,7 @@ const copyToClipboard = async (text: string | null, type: 'txid' | 'wallet') => 
 
 const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolean) => {
   return [
-    'py-3 px-4 max-w-[80%] text-sm whitespace-pre-wrap group/message',
+    'relative flex flex-col break-words min-w-[120px] max-w-[85%] md:max-w-[75%] text-sm overflow-hidden',
     sent 
       ? 'bg-[#cba6f7] text-[#1e1e2e]' // Mauve with dark base text
       : 'bg-[#45475a] text-[#cdd6f4]', // Surface1 with text
@@ -176,7 +176,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     // Middle messages
     !isFirst && !isLast && (sent ? 'rounded-l-xl' : 'rounded-r-xl'),
     // Add shadow and hover effect
-    'shadow-sm hover:shadow-md transition-shadow relative mb-2'
+    'shadow-sm hover:shadow-md transition-shadow mb-[2px]'
   ]
 }
 </script>
@@ -210,7 +210,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 
             <!-- Message group -->
             <div :class="getMessageGroupClasses(group.sent)">
-              <div class="flex flex-col gap-0.5">
+              <div class="flex flex-col gap-[2px]">
                 <div v-for="(message, messageIndex) in group.messages" :key="message.id" 
                   :class="getMessageBubbleClasses(
                     group.sent,
@@ -218,43 +218,48 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                     messageIndex === group.messages.length - 1
                   )"
                 >
-                  <div class="mb-2">{{ message.content }}</div>
+                  <!-- Message content wrapper -->
+                  <div class="px-4 py-3 break-words whitespace-pre-wrap">
+                    <span class="select-text">{{ message.content }}</span>
+                  </div>
+
+                  <!-- Action buttons for txid/wallet -->
                   <div v-if="hasTxid(message.content) || hasWallet(message.content)" 
-                    class="flex flex-wrap gap-2 mt-2 pt-2 border-t border-[#1e1e2e]/10">
+                    class="flex flex-wrap items-center gap-2 px-4 pb-3 pt-2 mt-0 border-t border-[#1e1e2e]/10">
                     <template v-if="hasTxid(message.content)">
                       <button @click="copyToClipboard(getTxid(message.content), 'txid')"
-                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                        <Copy class="h-3.5 w-3.5" />
-                        Copy txid
+                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        <Copy class="h-3.5 w-3.5 shrink-0" />
+                        <span class="truncate">Copy txid</span>
                       </button>
                       <a v-if="getTxid(message.content)"
                         :href="`https://mempool.space/tx/${getTxid(message.content)}`"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                        <ExternalLink class="h-3.5 w-3.5" />
-                        View on mempool
+                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        <ExternalLink class="h-3.5 w-3.5 shrink-0" />
+                        <span class="truncate">View on mempool</span>
                       </a>
                     </template>
                     <template v-if="hasWallet(message.content)">
                       <button @click="copyToClipboard(getWallet(message.content), 'wallet')"
-                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                        <Copy class="h-3.5 w-3.5" />
-                        Copy wallet
+                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        <Copy class="h-3.5 w-3.5 shrink-0" />
+                        <span class="truncate">Copy wallet</span>
                       </button>
                       <a v-if="getWallet(message.content)"
                         :href="`https://mempool.space/address/${getWallet(message.content)}`"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                        <ExternalLink class="h-3.5 w-3.5" />
-                        View on mempool
+                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        <ExternalLink class="h-3.5 w-3.5 shrink-0" />
+                        <span class="truncate">View on mempool</span>
                       </a>
                     </template>
                   </div>
                 </div>
               </div>
-              <span class="text-[11px] text-[#6c7086] px-2 mt-1">
+              <span class="text-[11px] text-[#6c7086] px-2 mt-0.5 select-none">
                 {{ formatTime(group.timestamp) }}
               </span>
             </div>
@@ -290,10 +295,26 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     opacity: 0;
     transform: translateY(10px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Add these new styles */
+.break-words {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Prevent text selection on interactive elements */
+.select-none {
+  user-select: none;
+}
+
+/* Allow text selection in messages */
+.select-text {
+  user-select: text;
 }
 </style>
