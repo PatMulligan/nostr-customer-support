@@ -13,6 +13,7 @@ const nostrStore = useNostrStore()
 const input = ref('')
 const inputLength = computed(() => input.value.trim().length)
 const messagesEndRef = ref<HTMLDivElement | null>(null)
+const isSending = ref(false)
 
 // Group messages by sender and time
 interface MessageGroup {
@@ -25,7 +26,10 @@ const groupedMessages = computed<MessageGroup[]>(() => {
   const groups: MessageGroup[] = []
   let currentGroup: MessageGroup | null = null
 
-  for (const message of nostrStore.currentMessages) {
+  // Sort messages by timestamp first
+  const sortedMessages = [...nostrStore.currentMessages].sort((a, b) => a.created_at - b.created_at)
+
+  for (const message of sortedMessages) {
     // Start a new group if:
     // 1. No current group
     // 2. Different sender than last message
@@ -64,10 +68,15 @@ function scrollToBottom() {
 
 const sendMessage = async (event: Event) => {
   event.preventDefault()
-  if (inputLength.value === 0 || !nostrStore.activeChat) return
+  if (inputLength.value === 0 || !nostrStore.activeChat || isSending.value) return
 
-  await nostrStore.sendMessage(nostrStore.activeChat, input.value)
-  input.value = ''
+  try {
+    isSending.value = true
+    await nostrStore.sendMessage(nostrStore.activeChat, input.value)
+    input.value = ''
+  } finally {
+    isSending.value = false
+  }
 }
 
 const formatTime = (timestamp: number) => {
@@ -156,7 +165,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                   {{ message.content }}
                 </div>
               </div>
-              <span class="text-[11px] text-[#a6adc8] px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="text-[11px] text-[#6c7086] px-2 mt-1">
                 {{ formatTime(group.timestamp) }}
               </span>
             </div>
@@ -171,10 +180,11 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
         <Input id="message" v-model="input" placeholder="Type your message..."
           class="flex-1 bg-[#1e1e2e] border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] transition-shadow"
           autocomplete="off" />
-        <Button type="submit" size="icon" :disabled="inputLength === 0"
+        <Button type="submit" size="icon" :disabled="inputLength === 0 || isSending"
           class="bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md">
-          <Send class="h-4 w-4" />
-          <span class="sr-only">Send</span>
+          <Send v-if="!isSending" class="h-4 w-4" />
+          <div v-else class="h-4 w-4 animate-spin rounded-full border-2 border-[#1e1e2e] border-r-transparent" />
+          <span class="sr-only">{{ isSending ? 'Sending...' : 'Send' }}</span>
         </Button>
       </form>
     </CardFooter>

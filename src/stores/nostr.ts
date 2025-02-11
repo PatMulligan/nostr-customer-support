@@ -12,11 +12,12 @@ const SUPPORT_NPUB = npubToHex(import.meta.env.VITE_SUPPORT_NPUB)
 
 export const useNostrStore = defineStore('nostr', () => {
   // State
-  const account = ref<NostrAccount | null>(JSON.parse(localStorage.getItem('nostr_account') || 'null'))
+  const account = ref<NostrAccount | null>(null)
   const profiles = ref<Map<string, NostrProfile>>(new Map())
   const messages = ref<Map<string, DirectMessage[]>>(new Map())
   const activeChat = ref<string | null>(null)
   const relayPool = ref<any[]>([])
+  const processedMessageIds = ref(new Set<string>())
 
   // Watch account changes and persist to localStorage
   watch(account, (newAccount) => {
@@ -103,6 +104,20 @@ export const useNostrStore = defineStore('nostr', () => {
     activeChat.value = null
   }
 
+  async function addMessage(pubkey: string, message: DirectMessage) {
+    // Skip if we've already processed this message
+    if (processedMessageIds.value.has(message.id)) {
+      return
+    }
+
+    // Add message ID to processed set
+    processedMessageIds.value.add(message.id)
+
+    // Add message to the map
+    const userMessages = messages.value.get(pubkey) || []
+    messages.value.set(pubkey, [...userMessages, message])
+  }
+
   async function sendMessage(to: string, content: string) {
     if (!account.value) return
 
@@ -120,9 +135,7 @@ export const useNostrStore = defineStore('nostr', () => {
     event.id = getEventHash(event)
     event.sig = await signEvent(event, account.value.privkey)
 
-    await publishEvent(event, account.value.relays)
-
-    // Add to local messages
+    // Add to local messages first
     const dm: DirectMessage = {
       id: event.id,
       pubkey: to,
@@ -131,8 +144,10 @@ export const useNostrStore = defineStore('nostr', () => {
       sent: true
     }
 
-    const userMessages = messages.value.get(to) || []
-    messages.value.set(to, [...userMessages, dm])
+    await addMessage(to, dm)
+
+    // Then publish to relays
+    await publishEvent(event, account.value.relays)
   }
 
   async function subscribeToMessages() {
@@ -148,7 +163,7 @@ export const useNostrStore = defineStore('nostr', () => {
     const sentFilter = {
       kinds: [4],
       authors: [account.value.pubkey],
-      '#p': [SUPPORT_NPUB] // Make sure this is defined at the top of the file
+      '#p': [SUPPORT_NPUB]
     }
 
     relayPool.value.forEach(relay => {
@@ -157,6 +172,11 @@ export const useNostrStore = defineStore('nostr', () => {
       
       receivedSub.on('event', async (event: NostrEvent) => {
         try {
+          // Skip if we've already processed this message
+          if (processedMessageIds.value.has(event.id)) {
+            return
+          }
+
           const decrypted = await decryptMessage(
             account.value!.privkey,
             event.pubkey,
@@ -171,8 +191,7 @@ export const useNostrStore = defineStore('nostr', () => {
             sent: false
           }
 
-          const userMessages = messages.value.get(event.pubkey) || []
-          messages.value.set(event.pubkey, [...userMessages, dm])
+          await addMessage(event.pubkey, dm)
 
           // Load profile if not already loaded
           if (!profiles.value.has(event.pubkey)) {
@@ -188,9 +207,14 @@ export const useNostrStore = defineStore('nostr', () => {
       
       sentSub.on('event', async (event: NostrEvent) => {
         try {
+          // Skip if we've already processed this message
+          if (processedMessageIds.value.has(event.id)) {
+            return
+          }
+
           const decrypted = await decryptMessage(
             account.value!.privkey,
-            SUPPORT_NPUB, // The support agent's public key
+            SUPPORT_NPUB,
             event.content
           )
 
@@ -202,8 +226,7 @@ export const useNostrStore = defineStore('nostr', () => {
             sent: true
           }
 
-          const userMessages = messages.value.get(SUPPORT_NPUB) || []
-          messages.value.set(SUPPORT_NPUB, [...userMessages, dm])
+          await addMessage(SUPPORT_NPUB, dm)
         } catch (err) {
           console.error('Failed to decrypt sent message:', err)
         }
