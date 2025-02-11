@@ -182,8 +182,10 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 </script>
 
 <template>
-  <Card class="flex flex-col h-[calc(100vh-2rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825] border-[#313244] shadow-2xl overflow-hidden relative z-0">
-    <CardHeader class="flex-shrink-0 flex flex-row items-center justify-between px-6 py-4 border-b border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md relative z-50">
+  <Card
+    class="flex flex-col h-[calc(100vh-2rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825] border-[#313244] shadow-2xl overflow-hidden relative z-0">
+    <CardHeader
+      class="flex-shrink-0 flex flex-row items-center justify-between px-6 py-4 border-b border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md relative z-50">
       <!-- Left side with avatar and name -->
       <div class="flex items-center gap-5 flex-shrink-0">
         <div class="relative group">
@@ -266,7 +268,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                         target="_blank" rel="noopener noreferrer"
                         class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#89b4fa] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[130px] border border-[#45475a]/30">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
-                        <span class="truncate">View on mempool</span>
+                        <span class="truncate">mempool.space</span>
                       </a>
                     </div>
                     <!-- Wallet actions -->
@@ -281,7 +283,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                         rel="noopener noreferrer"
                         class="inline-flex items-center gap-2 px-4 h-8 rounded-full bg-gradient-to-r from-[#313244]/90 to-[#45475a]/90 hover:brightness-110 active:brightness-90 transition-all duration-200 text-xs font-medium select-none text-[#f9e2af] shadow-lg hover:shadow-xl backdrop-blur-sm min-w-[130px] border border-[#45475a]/30">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
-                        <span class="truncate">View on mempool</span>
+                        <span class="truncate">mempool.space</span>
                       </a>
                     </div>
                   </div>
@@ -297,7 +299,8 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
       </ScrollArea>
     </CardContent>
 
-    <CardFooter class="flex-shrink-0 mt-auto border-t border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md p-6 shadow-xl">
+    <CardFooter
+      class="flex-shrink-0 mt-auto border-t border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md p-6 shadow-xl">
       <form @submit="sendMessage" class="flex w-full items-center gap-4">
         <Input id="message" v-model="input" placeholder="Type your message..."
           class="flex-1 bg-[#1e1e2e]/90 border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] focus:border-[#cba6f7] transition-all duration-300 shadow-lg hover:border-[#45475a] rounded-xl h-11"
