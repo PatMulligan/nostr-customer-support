@@ -225,10 +225,12 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 
                   <!-- Action buttons for txid/wallet -->
                   <div v-if="hasTxid(message.content) || hasWallet(message.content)" 
-                    class="flex flex-wrap items-center gap-2 px-4 pb-3 pt-2 mt-0 border-t border-[#1e1e2e]/10">
-                    <template v-if="hasTxid(message.content)">
+                    class="flex flex-col gap-1.5 px-4 pb-2.5 pt-2 mt-0 border-t border-[#1e1e2e]/10">
+                    <!-- Transaction actions -->
+                    <div v-if="hasTxid(message.content)"
+                      class="flex items-center gap-1.5">
                       <button @click="copyToClipboard(getTxid(message.content), 'txid')"
-                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        class="inline-flex items-center gap-1.5 px-2 h-6 rounded-md bg-[#313244] hover:bg-[#45475a] transition-colors text-xs font-medium select-none text-[#89b4fa]">
                         <Copy class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">Copy txid</span>
                       </button>
@@ -236,14 +238,16 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                         :href="`https://mempool.space/tx/${getTxid(message.content)}`"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        class="inline-flex items-center gap-1.5 px-2 h-6 rounded-md bg-[#313244] hover:bg-[#45475a] transition-colors text-xs font-medium select-none text-[#89b4fa]">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">View on mempool</span>
                       </a>
-                    </template>
-                    <template v-if="hasWallet(message.content)">
+                    </div>
+                    <!-- Wallet actions -->
+                    <div v-if="hasWallet(message.content)"
+                      class="flex items-center gap-1.5">
                       <button @click="copyToClipboard(getWallet(message.content), 'wallet')"
-                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        class="inline-flex items-center gap-1.5 px-2 h-6 rounded-md bg-[#313244] hover:bg-[#45475a] transition-colors text-xs font-medium select-none text-[#f9e2af]">
                         <Copy class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">Copy wallet</span>
                       </button>
@@ -251,11 +255,11 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                         :href="`https://mempool.space/address/${getWallet(message.content)}`"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 px-2 h-7 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium select-none">
+                        class="inline-flex items-center gap-1.5 px-2 h-6 rounded-md bg-[#313244] hover:bg-[#45475a] transition-colors text-xs font-medium select-none text-[#f9e2af]">
                         <ExternalLink class="h-3.5 w-3.5 shrink-0" />
                         <span class="truncate">View on mempool</span>
                       </a>
-                    </template>
+                    </div>
                   </div>
                 </div>
               </div>
