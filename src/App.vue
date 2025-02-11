@@ -6,6 +6,7 @@ import { Sun, Moon, LogOut } from 'lucide-vue-next'
 import LoginForm from './components/LoginForm.vue'
 import ChatInterface from './components/ChatInterface.vue'
 import { Button } from '@/components/ui/button'
+import { Toaster } from '@/components/ui/toast'
 
 const nostrStore = useNostrStore()
 const themeStore = useThemeStore()
@@ -54,6 +55,7 @@ const isDark = computed(() => themeStore.theme === 'dark')
       <LoginForm v-if="!nostrStore.isLoggedIn" />
       <ChatInterface v-else />
     </Transition>
+    <Toaster />
   </main>
 </template>
 

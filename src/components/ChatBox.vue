@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import { Send } from 'lucide-vue-next'
+import { Send, Copy, ExternalLink, Check, AlertCircle } from 'lucide-vue-next'
 import { useNostrStore } from '@/stores/nostr'
 import type { DirectMessage } from '@/types/nostr'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useToast } from '@/components/ui/toast'
+
+const { toast } = useToast()
 
 const nostrStore = useNostrStore()
 const input = ref('')
@@ -107,9 +110,46 @@ const getMessageGroupClasses = (sent: boolean) => {
   ]
 }
 
+const hasTxid = (content: string) => {
+  const txidPattern = /\b[a-fA-F0-9]{64}\b/g
+  return txidPattern.test(content)
+}
+
+const getTxid = (content: string) => {
+  const txidPattern = /\b[a-fA-F0-9]{64}\b/g
+  const match = content.match(txidPattern)
+  return match ? match[0] : null
+}
+
+const copyToClipboard = async (text: string | null) => {
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    toast({
+      title: 'Copied to clipboard',
+      description: text.slice(0, 8) + '...' + text.slice(-8),
+      duration: 2000,
+      class: 'group border-[#45475a] bg-[#1e1e2e] text-[#cdd6f4]',
+      icon: Check,
+      iconClass: 'text-[#a6e3a1]',
+      titleClass: 'text-[#a6e3a1]',
+    })
+  } catch (err) {
+    console.error('Failed to copy:', err)
+    toast({
+      title: 'Failed to copy',
+      description: 'Please try again',
+      variant: 'destructive',
+      duration: 2000,
+      class: 'group border-red-900/50 bg-red-950 text-red-50',
+      icon: AlertCircle,
+    })
+  }
+}
+
 const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolean) => {
   return [
-    'py-3 px-6 max-w-[80%] text-sm whitespace-pre-wrap flex items-center justify-center',
+    'py-3 px-4 max-w-[80%] text-sm whitespace-pre-wrap group/message',
     sent 
       ? 'bg-[#cba6f7] text-[#1e1e2e]' // Mauve with dark base text
       : 'bg-[#45475a] text-[#cdd6f4]', // Surface1 with text
@@ -122,7 +162,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     // Middle messages
     !isFirst && !isLast && (sent ? 'rounded-l-xl' : 'rounded-r-xl'),
     // Add shadow and hover effect
-    'shadow-sm hover:shadow-md transition-shadow'
+    'shadow-sm hover:shadow-md transition-shadow relative mb-2'
   ]
 }
 </script>
@@ -157,12 +197,30 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
             <!-- Message group -->
             <div :class="getMessageGroupClasses(group.sent)">
               <div class="flex flex-col gap-0.5">
-                <div v-for="(message, messageIndex) in group.messages" :key="message.id" :class="getMessageBubbleClasses(
-                  group.sent,
-                  messageIndex === 0,
-                  messageIndex === group.messages.length - 1
-                )">
-                  {{ message.content }}
+                <div v-for="(message, messageIndex) in group.messages" :key="message.id" 
+                  :class="getMessageBubbleClasses(
+                    group.sent,
+                    messageIndex === 0,
+                    messageIndex === group.messages.length - 1
+                  )"
+                >
+                  <div class="mb-2">{{ message.content }}</div>
+                  <div v-if="hasTxid(message.content)" 
+                    class="flex gap-2 mt-2 pt-2 border-t border-[#1e1e2e]/10">
+                    <button @click="copyToClipboard(getTxid(message.content))"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                      <Copy class="h-3.5 w-3.5" />
+                      Copy txid
+                    </button>
+                    <a v-if="getTxid(message.content)"
+                      :href="`https://mempool.space/tx/${getTxid(message.content)}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                      <ExternalLink class="h-3.5 w-3.5" />
+                      View on mempool
+                    </a>
+                  </div>
                 </div>
               </div>
               <span class="text-[11px] text-[#6c7086] px-2 mt-1">

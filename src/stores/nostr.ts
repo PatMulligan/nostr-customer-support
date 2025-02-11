@@ -12,7 +12,7 @@ const SUPPORT_NPUB = npubToHex(import.meta.env.VITE_SUPPORT_NPUB)
 
 export const useNostrStore = defineStore('nostr', () => {
   // State
-  const account = ref<NostrAccount | null>(null)
+  const account = ref<NostrAccount | null>(JSON.parse(localStorage.getItem('nostr_account') || 'null'))
   const profiles = ref<Map<string, NostrProfile>>(new Map())
   const messages = ref<Map<string, DirectMessage[]>>(new Map())
   const activeChat = ref<string | null>(null)
