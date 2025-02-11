@@ -2,9 +2,10 @@
 import { computed, onMounted } from 'vue'
 import { useNostrStore } from './stores/nostr'
 import { useThemeStore } from './stores/theme'
-import { Sun, Moon, LogOut } from 'lucide-vue-next'
+import { Sun, Moon } from 'lucide-vue-next'
 import LoginForm from './components/LoginForm.vue'
 import ChatInterface from './components/ChatInterface.vue'
+import LogoutDialog from './components/LogoutDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/toast'
 
@@ -17,21 +18,16 @@ onMounted(async () => {
 })
 
 const isDark = computed(() => themeStore.theme === 'dark')
+
+const handleLogout = () => {
+  nostrStore.logout()
+}
 </script>
 
 <template>
   <main class="min-h-screen bg-light-base dark:bg-dark-base text-light-text dark:text-dark-text transition-colors">
     <div class="absolute top-4 right-4 flex items-center gap-2">
-      <Button 
-        v-if="nostrStore.isLoggedIn"
-        variant="ghost" 
-        size="icon" 
-        @click="nostrStore.logout"
-        class="hover:bg-light-surface0 dark:hover:bg-dark-surface0"
-      >
-        <LogOut class="h-5 w-5" />
-        <span class="sr-only">Logout</span>
-      </Button>
+      <LogoutDialog v-if="nostrStore.isLoggedIn" :onLogout="handleLogout" />
       <Button 
         variant="ghost" 
         size="icon" 

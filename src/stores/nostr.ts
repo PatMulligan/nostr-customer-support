@@ -37,6 +37,15 @@ export const useNostrStore = defineStore('nostr', () => {
   // Initialize connection if account exists
   async function init() {
     if (account.value) {
+      // Clear existing state
+      messages.value.clear()
+      profiles.value.clear()
+      processedMessageIds.value.clear()
+      
+      // Close existing connections
+      relayPool.value.forEach(relay => relay.close())
+      relayPool.value = []
+
       // Connect to relays
       const connectedRelays = await Promise.all(
         account.value.relays.map(relay => connectToRelay(relay.url))
@@ -44,11 +53,14 @@ export const useNostrStore = defineStore('nostr', () => {
       
       relayPool.value = connectedRelays.filter(relay => relay !== null)
 
-      // Subscribe to messages
-      await subscribeToMessages()
+      // Subscribe to messages and load history
+      await Promise.all([
+        subscribeToMessages(),
+        loadProfiles()
+      ])
 
-      // Load profiles
-      await loadProfiles()
+      // Set active chat to support agent
+      activeChat.value = SUPPORT_NPUB
     }
   }
 
@@ -62,6 +74,7 @@ export const useNostrStore = defineStore('nostr', () => {
       relays: DEFAULT_RELAYS.map(url => ({ url, read: true, write: true }))
     }
 
+    // Initialize connection and load messages
     await init()
   }
 
@@ -153,85 +166,113 @@ export const useNostrStore = defineStore('nostr', () => {
   async function subscribeToMessages() {
     if (!account.value) return
 
-    // Filter for received messages
+    // Filter for received messages with history
     const receivedFilter = {
       kinds: [4],
-      '#p': [account.value.pubkey]
+      '#p': [account.value.pubkey],
+      since: 0 // Get all historical messages
     }
 
-    // Filter for sent messages
+    // Filter for sent messages with history
     const sentFilter = {
       kinds: [4],
       authors: [account.value.pubkey],
-      '#p': [SUPPORT_NPUB]
+      '#p': [SUPPORT_NPUB],
+      since: 0 // Get all historical messages
     }
 
-    relayPool.value.forEach(relay => {
-      // Subscribe to received messages
-      const receivedSub = relay.sub([receivedFilter])
-      
-      receivedSub.on('event', async (event: NostrEvent) => {
-        try {
-          // Skip if we've already processed this message
-          if (processedMessageIds.value.has(event.id)) {
-            return
+    const subscribeToRelay = (relay: any) => {
+      return new Promise((resolve) => {
+        let receivedCount = 0
+        let sentCount = 0
+        let eoseCount = 0
+
+        // Subscribe to received messages
+        const receivedSub = relay.sub([receivedFilter])
+        
+        receivedSub.on('event', async (event: NostrEvent) => {
+          try {
+            // Skip if we've already processed this message
+            if (processedMessageIds.value.has(event.id)) {
+              return
+            }
+
+            receivedCount++
+            const decrypted = await decryptMessage(
+              account.value!.privkey,
+              event.pubkey,
+              event.content
+            )
+
+            const dm: DirectMessage = {
+              id: event.id,
+              pubkey: event.pubkey,
+              content: decrypted,
+              created_at: event.created_at,
+              sent: false
+            }
+
+            await addMessage(event.pubkey, dm)
+
+            // Load profile if not already loaded
+            if (!profiles.value.has(event.pubkey)) {
+              await loadProfiles()
+            }
+          } catch (err) {
+            console.error('Failed to decrypt received message:', err)
           }
+        })
 
-          const decrypted = await decryptMessage(
-            account.value!.privkey,
-            event.pubkey,
-            event.content
-          )
+        // Subscribe to sent messages
+        const sentSub = relay.sub([sentFilter])
+        
+        sentSub.on('event', async (event: NostrEvent) => {
+          try {
+            // Skip if we've already processed this message
+            if (processedMessageIds.value.has(event.id)) {
+              return
+            }
 
-          const dm: DirectMessage = {
-            id: event.id,
-            pubkey: event.pubkey,
-            content: decrypted,
-            created_at: event.created_at,
-            sent: false
+            sentCount++
+            const decrypted = await decryptMessage(
+              account.value!.privkey,
+              SUPPORT_NPUB,
+              event.content
+            )
+
+            const dm: DirectMessage = {
+              id: event.id,
+              pubkey: SUPPORT_NPUB,
+              content: decrypted,
+              created_at: event.created_at,
+              sent: true
+            }
+
+            await addMessage(SUPPORT_NPUB, dm)
+          } catch (err) {
+            console.error('Failed to decrypt sent message:', err)
           }
+        })
 
-          await addMessage(event.pubkey, dm)
-
-          // Load profile if not already loaded
-          if (!profiles.value.has(event.pubkey)) {
-            await loadProfiles()
+        // Listen for end of stored events
+        receivedSub.on('eose', () => {
+          eoseCount++
+          if (eoseCount >= 2) { // Both subscriptions have finished
+            resolve(true)
           }
-        } catch (err) {
-          console.error('Failed to decrypt received message:', err)
-        }
+        })
+
+        sentSub.on('eose', () => {
+          eoseCount++
+          if (eoseCount >= 2) { // Both subscriptions have finished
+            resolve(true)
+          }
+        })
       })
+    }
 
-      // Subscribe to sent messages
-      const sentSub = relay.sub([sentFilter])
-      
-      sentSub.on('event', async (event: NostrEvent) => {
-        try {
-          // Skip if we've already processed this message
-          if (processedMessageIds.value.has(event.id)) {
-            return
-          }
-
-          const decrypted = await decryptMessage(
-            account.value!.privkey,
-            SUPPORT_NPUB,
-            event.content
-          )
-
-          const dm: DirectMessage = {
-            id: event.id,
-            pubkey: SUPPORT_NPUB,
-            content: decrypted,
-            created_at: event.created_at,
-            sent: true
-          }
-
-          await addMessage(SUPPORT_NPUB, dm)
-        } catch (err) {
-          console.error('Failed to decrypt sent message:', err)
-        }
-      })
-    })
+    // Wait for all relays to load their historical messages
+    await Promise.all(relayPool.value.map(relay => subscribeToRelay(relay)))
   }
 
   return {
