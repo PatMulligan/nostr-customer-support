@@ -60,9 +60,24 @@ export function getEventHash(event: NostrEvent): string {
 }
 
 export async function signEvent(event: NostrEvent, privateKey: string): Promise<string> {
-  return window.NostrTools.signEvent(event, privateKey)
+  return window.NostrTools.getSignature(event, privateKey)
 }
 
 export function verifySignature(event: NostrEvent): boolean {
   return window.NostrTools.verifySignature(event)
+}
+
+export function npubToHex(npub: string): string {
+  try {
+    const { type, data } = window.NostrTools.nip19.decode(npub)
+    if (type !== 'npub') throw new Error('Invalid npub')
+    return data
+  } catch (err) {
+    console.error('Failed to decode npub:', err)
+    throw err
+  }
+}
+
+export function hexToNpub(hex: string): string {
+  return window.NostrTools.nip19.npubEncode(hex)
 } 
