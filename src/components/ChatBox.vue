@@ -182,12 +182,10 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 </script>
 
 <template>
-  <Card
-    class="h-[calc(100vh-2rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825] border-[#313244] shadow-2xl overflow-hidden relative z-0">
-    <CardHeader
-      class="flex flex-row items-center justify-between border-b border-[#313244]/50 px-6 py-4 bg-[#181825]/95 backdrop-blur-md relative min-h-[22.5rem] shadow-lg">
+  <Card class="flex flex-col h-[calc(100vh-2rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825] border-[#313244] shadow-2xl overflow-hidden relative z-0">
+    <CardHeader class="flex-shrink-0 flex flex-row items-center justify-between px-6 py-4 border-b border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md relative z-50">
       <!-- Left side with avatar and name -->
-      <div class="flex items-center gap-5 flex-shrink-0 z-10">
+      <div class="flex items-center gap-5 flex-shrink-0">
         <div class="relative group">
           <div
             class="absolute -inset-0.5 bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] rounded-full opacity-75 group-hover:opacity-100 blur transition duration-200">
@@ -207,18 +205,24 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
       </div>
 
       <!-- Center badge -->
-      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div
           class="text-xs font-medium text-[#cdd6f4] bg-gradient-to-r from-[#313244]/80 to-[#45475a]/80 backdrop-blur-sm px-4 py-2 rounded-full whitespace-nowrap shadow-lg border border-[#45475a]/50">
           Customer Support
         </div>
       </div>
 
-      <!-- Right side spacer -->
-      <div class="w-[120px]"></div>
+      <!-- Right side spacer to maintain layout balance -->
+      <div class="flex items-center gap-5 flex-shrink-0 invisible">
+        <div class="h-11 w-11"></div>
+        <div class="hidden sm:block">
+          <div class="h-5"></div>
+          <div class="h-5 mt-1.5"></div>
+        </div>
+      </div>
     </CardHeader>
 
-    <CardContent class="p-0 h-[calc(100%-8rem)] bg-gradient-to-b from-[#1e1e2e] to-[#181825]">
+    <CardContent class="flex-1 min-h-0 p-0 bg-gradient-to-b from-[#1e1e2e] to-[#181825] overflow-hidden">
       <ScrollArea class="h-full" type="hover">
         <div class="flex flex-col gap-4 p-6">
           <template v-for="(group, groupIndex) in groupedMessages" :key="groupIndex">
@@ -293,7 +297,7 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
       </ScrollArea>
     </CardContent>
 
-    <CardFooter class="border-t border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md p-6 shadow-xl">
+    <CardFooter class="flex-shrink-0 mt-auto border-t border-[#313244]/50 bg-[#181825]/95 backdrop-blur-md p-6 shadow-xl">
       <form @submit="sendMessage" class="flex w-full items-center gap-4">
         <Input id="message" v-model="input" placeholder="Type your message..."
           class="flex-1 bg-[#1e1e2e]/90 border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] focus:border-[#cba6f7] transition-all duration-300 shadow-lg hover:border-[#45475a] rounded-xl h-11"
@@ -428,5 +432,30 @@ a:active {
 .bg-gradient-animate {
   background-size: 200% 200%;
   animation: gradient-shift 15s ease infinite;
+}
+
+/* Add these new styles */
+.translate-center {
+  transform: translate(-50%, -50%);
+}
+
+/* Update flex layout styles */
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2rem);
+  max-height: calc(100vh - 2rem);
+}
+
+.chat-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollarea-viewport {
+  height: 100%;
 }
 </style>
