@@ -121,13 +121,27 @@ const getTxid = (content: string) => {
   return match ? match[0] : null
 }
 
-const copyToClipboard = async (text: string | null) => {
+const hasWallet = (content: string) => {
+  // Match both legacy and native segwit addresses
+  const walletPattern = /\b(1[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59})\b/g
+  return walletPattern.test(content)
+}
+
+const getWallet = (content: string) => {
+  const walletPattern = /\b(1[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59})\b/g
+  const match = content.match(walletPattern)
+  return match ? match[0] : null
+}
+
+const copyToClipboard = async (text: string | null, type: 'txid' | 'wallet') => {
   if (!text) return
   try {
     await navigator.clipboard.writeText(text)
     toast({
       title: 'Copied to clipboard',
-      description: text.slice(0, 8) + '...' + text.slice(-8),
+      description: type === 'txid' 
+        ? `${text.slice(0, 8)}...${text.slice(-8)}`
+        : text,
       duration: 2000,
       class: 'group border-[#45475a] bg-[#1e1e2e] text-[#cdd6f4]',
       icon: Check,
@@ -205,21 +219,38 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
                   )"
                 >
                   <div class="mb-2">{{ message.content }}</div>
-                  <div v-if="hasTxid(message.content)" 
-                    class="flex gap-2 mt-2 pt-2 border-t border-[#1e1e2e]/10">
-                    <button @click="copyToClipboard(getTxid(message.content))"
-                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                      <Copy class="h-3.5 w-3.5" />
-                      Copy txid
-                    </button>
-                    <a v-if="getTxid(message.content)"
-                      :href="`https://mempool.space/tx/${getTxid(message.content)}`"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
-                      <ExternalLink class="h-3.5 w-3.5" />
-                      View on mempool
-                    </a>
+                  <div v-if="hasTxid(message.content) || hasWallet(message.content)" 
+                    class="flex flex-wrap gap-2 mt-2 pt-2 border-t border-[#1e1e2e]/10">
+                    <template v-if="hasTxid(message.content)">
+                      <button @click="copyToClipboard(getTxid(message.content), 'txid')"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                        <Copy class="h-3.5 w-3.5" />
+                        Copy txid
+                      </button>
+                      <a v-if="getTxid(message.content)"
+                        :href="`https://mempool.space/tx/${getTxid(message.content)}`"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                        <ExternalLink class="h-3.5 w-3.5" />
+                        View on mempool
+                      </a>
+                    </template>
+                    <template v-if="hasWallet(message.content)">
+                      <button @click="copyToClipboard(getWallet(message.content), 'wallet')"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                        <Copy class="h-3.5 w-3.5" />
+                        Copy wallet
+                      </button>
+                      <a v-if="getWallet(message.content)"
+                        :href="`https://mempool.space/address/${getWallet(message.content)}`"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#1e1e2e]/10 hover:bg-[#1e1e2e]/20 transition-colors text-xs font-medium">
+                        <ExternalLink class="h-3.5 w-3.5" />
+                        View on mempool
+                      </a>
+                    </template>
                   </div>
                 </div>
               </div>
