@@ -26,7 +26,7 @@ const handleLogout = () => {
 
 <template>
   <main class="min-h-screen bg-light-base dark:bg-dark-base text-light-text dark:text-dark-text transition-colors">
-    <div class="absolute top-4 right-4 flex items-center gap-2">
+    <div class="absolute top-4 right-4 flex items-center gap-2 z-[100]">
       <LogoutDialog v-if="nostrStore.isLoggedIn" :onLogout="handleLogout" />
       <Button 
         variant="ghost" 
