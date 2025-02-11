@@ -22,25 +22,27 @@ const sendMessage = async (event: Event) => {
 const getMessageClasses = (sent: boolean) => {
   return [
     'flex w-max max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm',
-    sent ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'
+    sent 
+      ? 'ml-auto bg-dark-mauve dark:bg-dark-mauve text-light-base dark:text-dark-base' 
+      : 'bg-light-surface0 dark:bg-dark-surface0'
   ]
 }
 </script>
 
 <template>
-  <Card>
-    <CardHeader class="flex flex-row items-center">
+  <Card class="bg-light-mantle dark:bg-dark-mantle border-light-surface1 dark:border-dark-surface1">
+    <CardHeader class="flex flex-row items-center border-b border-light-surface1 dark:border-dark-surface1">
       <div class="flex items-center space-x-4">
-        <Avatar>
-          <AvatarFallback>SA</AvatarFallback>
+        <Avatar class="bg-light-surface0 dark:bg-dark-surface0">
+          <AvatarFallback class="text-light-text dark:text-dark-text">SA</AvatarFallback>
         </Avatar>
         <div>
-          <p class="text-sm font-medium leading-none">Support Agent</p>
+          <p class="text-sm font-medium leading-none text-light-text dark:text-dark-text">Support Agent</p>
         </div>
       </div>
     </CardHeader>
 
-    <CardContent>
+    <CardContent class="p-4 space-y-4 bg-light-base dark:bg-dark-base">
       <div class="space-y-4">
         <div
           v-for="message in nostrStore.currentMessages"
@@ -52,7 +54,7 @@ const getMessageClasses = (sent: boolean) => {
       </div>
     </CardContent>
 
-    <CardFooter>
+    <CardFooter class="border-t border-light-surface1 dark:border-dark-surface1 bg-light-mantle dark:bg-dark-mantle">
       <form
         @submit="sendMessage"
         class="flex w-full items-center space-x-2"
@@ -61,10 +63,15 @@ const getMessageClasses = (sent: boolean) => {
           id="message"
           v-model="input"
           placeholder="Type your message..."
-          class="flex-1"
+          class="flex-1 bg-light-base dark:bg-dark-base border-light-surface1 dark:border-dark-surface1"
           autocomplete="off"
         />
-        <Button type="submit" size="icon" :disabled="inputLength === 0">
+        <Button 
+          type="submit" 
+          size="icon" 
+          :disabled="inputLength === 0"
+          class="bg-dark-mauve dark:bg-dark-mauve text-light-base dark:text-dark-base hover:bg-dark-mauve/90"
+        >
           <Send class="h-4 w-4" />
           <span class="sr-only">Send</span>
         </Button>
