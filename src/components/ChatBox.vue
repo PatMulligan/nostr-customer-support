@@ -30,9 +30,9 @@ const groupedMessages = computed<MessageGroup[]>(() => {
     // 1. No current group
     // 2. Different sender than last message
     // 3. More than 2 minutes since last message
-    if (!currentGroup || 
-        currentGroup.sent !== message.sent ||
-        message.created_at - currentGroup.messages[currentGroup.messages.length - 1].created_at > 120) {
+    if (!currentGroup ||
+      currentGroup.sent !== message.sent ||
+      message.created_at - currentGroup.messages[currentGroup.messages.length - 1].created_at > 120) {
       currentGroup = {
         sent: message.sent,
         messages: [],
@@ -71,9 +71,9 @@ const sendMessage = async (event: Event) => {
 }
 
 const formatTime = (timestamp: number) => {
-  return new Date(timestamp * 1000).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  return new Date(timestamp * 1000).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
 
@@ -100,10 +100,10 @@ const getMessageGroupClasses = (sent: boolean) => {
 
 const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolean) => {
   return [
-    'px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap inline-block',
+    'py-3 px-6 max-w-[80%] text-sm whitespace-pre-wrap flex items-center justify-center',
     sent 
-      ? 'bg-[#cba6f7] text-[#1e1e2e]' // Catppuccin Mocha mauve for sent messages
-      : 'bg-[#313244] text-[#cdd6f4]', // Catppuccin Mocha surface0 for received messages
+      ? 'bg-[#cba6f7] text-[#1e1e2e]' // Mauve with dark base text
+      : 'bg-[#45475a] text-[#cdd6f4]', // Surface1 with text
     // First message in group
     isFirst && (sent ? 'rounded-t-xl rounded-l-xl' : 'rounded-t-xl rounded-r-xl'),
     // Last message in group
@@ -119,10 +119,10 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
 </script>
 
 <template>
-  <Card class="h-[calc(100vh-2rem)] bg-[#181825] border-[#313244] shadow-xl">
+  <Card class="h-[calc(100vh-2rem)] bg-[#1e1e2e] border-[#313244] shadow-xl">
     <CardHeader class="flex flex-row items-center border-b border-[#313244] py-3 px-4">
       <div class="flex items-center space-x-4">
-        <Avatar class="h-10 w-10 bg-[#313244] ring-2 ring-[#cba6f7] ring-offset-2 ring-offset-[#181825]">
+        <Avatar class="h-10 w-10 bg-[#313244] ring-2 ring-[#cba6f7] ring-offset-2 ring-offset-[#1e1e2e]">
           <AvatarFallback class="text-base font-medium text-[#cdd6f4]">SA</AvatarFallback>
         </Avatar>
         <div>
@@ -137,11 +137,9 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
         <div class="flex flex-col gap-3 p-4">
           <template v-for="(group, groupIndex) in groupedMessages" :key="groupIndex">
             <!-- Date separator if first message of the day -->
-            <div 
-              v-if="groupIndex === 0 || 
-                    formatDate(group.timestamp) !== formatDate(groupedMessages[groupIndex - 1].timestamp)"
-              class="flex justify-center my-3"
-            >
+            <div v-if="groupIndex === 0 ||
+              formatDate(group.timestamp) !== formatDate(groupedMessages[groupIndex - 1].timestamp)"
+              class="flex justify-center my-3">
               <div class="px-3 py-1 rounded-full bg-[#313244]/50 text-xs font-medium text-[#cdd6f4]">
                 {{ formatDate(group.timestamp) }}
               </div>
@@ -150,21 +148,15 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
             <!-- Message group -->
             <div :class="getMessageGroupClasses(group.sent)">
               <div class="flex flex-col gap-0.5">
-                <div
-                  v-for="(message, messageIndex) in group.messages"
-                  :key="message.id"
-                  :class="getMessageBubbleClasses(
-                    group.sent,
-                    messageIndex === 0,
-                    messageIndex === group.messages.length - 1
-                  )"
-                >
+                <div v-for="(message, messageIndex) in group.messages" :key="message.id" :class="getMessageBubbleClasses(
+                  group.sent,
+                  messageIndex === 0,
+                  messageIndex === group.messages.length - 1
+                )">
                   {{ message.content }}
                 </div>
               </div>
-              <span 
-                class="text-[11px] text-[#a6adc8] px-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+              <span class="text-[11px] text-[#a6adc8] px-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 {{ formatTime(group.timestamp) }}
               </span>
             </div>
@@ -175,23 +167,12 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     </CardContent>
 
     <CardFooter class="border-t border-[#313244] bg-[#181825] p-4">
-      <form
-        @submit="sendMessage"
-        class="flex w-full items-center space-x-2"
-      >
-        <Input
-          id="message"
-          v-model="input"
-          placeholder="Type your message..."
+      <form @submit="sendMessage" class="flex w-full items-center space-x-2">
+        <Input id="message" v-model="input" placeholder="Type your message..."
           class="flex-1 bg-[#1e1e2e] border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] transition-shadow"
-          autocomplete="off"
-        />
-        <Button 
-          type="submit" 
-          size="icon" 
-          :disabled="inputLength === 0"
-          class="bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md"
-        >
+          autocomplete="off" />
+        <Button type="submit" size="icon" :disabled="inputLength === 0"
+          class="bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md">
           <Send class="h-4 w-4" />
           <span class="sr-only">Send</span>
         </Button>
@@ -210,9 +191,10 @@ const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolea
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-</style> 
+</style>

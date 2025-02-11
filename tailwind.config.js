@@ -2,7 +2,7 @@ const animate = require("tailwindcss-animate")
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
+  darkMode: ["class"],
   safelist: ["dark"],
   prefix: "",
 
@@ -58,7 +58,7 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Catppuccin Mocha (Dark)
+        // Catppuccin Mocha
         dark: {
           base: "#1e1e2e",
           mantle: "#181825",

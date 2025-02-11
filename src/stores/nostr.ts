@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { NostrEvent, NostrProfile, NostrAccount, DirectMessage } from '../types/nostr'
-import { connectToRelay, publishEvent, encryptMessage, decryptMessage, getEventHash, signEvent, getPublicKey } from '../lib/nostr'
+import { connectToRelay, publishEvent, encryptMessage, decryptMessage, getEventHash, signEvent, getPublicKey, npubToHex } from '../lib/nostr'
 
 const DEFAULT_RELAYS = [
   'wss://nostr.atitlan.io'
 ]
+
+// Get support agent's public key from environment variable
+const SUPPORT_NPUB = npubToHex(import.meta.env.VITE_SUPPORT_NPUB)
 
 export const useNostrStore = defineStore('nostr', () => {
   // State
@@ -135,15 +138,24 @@ export const useNostrStore = defineStore('nostr', () => {
   async function subscribeToMessages() {
     if (!account.value) return
 
-    const filter = {
+    // Filter for received messages
+    const receivedFilter = {
       kinds: [4],
       '#p': [account.value.pubkey]
     }
 
+    // Filter for sent messages
+    const sentFilter = {
+      kinds: [4],
+      authors: [account.value.pubkey],
+      '#p': [SUPPORT_NPUB] // Make sure this is defined at the top of the file
+    }
+
     relayPool.value.forEach(relay => {
-      const sub = relay.sub([filter])
+      // Subscribe to received messages
+      const receivedSub = relay.sub([receivedFilter])
       
-      sub.on('event', async (event: NostrEvent) => {
+      receivedSub.on('event', async (event: NostrEvent) => {
         try {
           const decrypted = await decryptMessage(
             account.value!.privkey,
@@ -167,7 +179,33 @@ export const useNostrStore = defineStore('nostr', () => {
             await loadProfiles()
           }
         } catch (err) {
-          console.error('Failed to decrypt message:', err)
+          console.error('Failed to decrypt received message:', err)
+        }
+      })
+
+      // Subscribe to sent messages
+      const sentSub = relay.sub([sentFilter])
+      
+      sentSub.on('event', async (event: NostrEvent) => {
+        try {
+          const decrypted = await decryptMessage(
+            account.value!.privkey,
+            SUPPORT_NPUB, // The support agent's public key
+            event.content
+          )
+
+          const dm: DirectMessage = {
+            id: event.id,
+            pubkey: SUPPORT_NPUB,
+            content: decrypted,
+            created_at: event.created_at,
+            sent: true
+          }
+
+          const userMessages = messages.value.get(SUPPORT_NPUB) || []
+          messages.value.set(SUPPORT_NPUB, [...userMessages, dm])
+        } catch (err) {
+          console.error('Failed to decrypt sent message:', err)
         }
       })
     })
