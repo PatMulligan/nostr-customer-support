@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useNostrStore } from './stores/nostr'
 import { useThemeStore } from './stores/theme'
-import { Sun, Moon } from 'lucide-vue-next'
+import { Sun, Moon, LogOut } from 'lucide-vue-next'
 import LoginForm from './components/LoginForm.vue'
 import ChatInterface from './components/ChatInterface.vue'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button'
 const nostrStore = useNostrStore()
 const themeStore = useThemeStore()
 
-onMounted(() => {
+onMounted(async () => {
   themeStore.init()
+  await nostrStore.init()
 })
 
 const isDark = computed(() => themeStore.theme === 'dark')
@@ -19,15 +20,40 @@ const isDark = computed(() => themeStore.theme === 'dark')
 
 <template>
   <main class="min-h-screen bg-light-base dark:bg-dark-base text-light-text dark:text-dark-text transition-colors">
-    <div class="absolute top-4 right-4">
-      <Button variant="ghost" size="icon" @click="themeStore.toggleTheme">
+    <div class="absolute top-4 right-4 flex items-center gap-2">
+      <Button 
+        v-if="nostrStore.isLoggedIn"
+        variant="ghost" 
+        size="icon" 
+        @click="nostrStore.logout"
+        class="hover:bg-light-surface0 dark:hover:bg-dark-surface0"
+      >
+        <LogOut class="h-5 w-5" />
+        <span class="sr-only">Logout</span>
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        @click="themeStore.toggleTheme"
+        class="hover:bg-light-surface0 dark:hover:bg-dark-surface0"
+      >
         <Sun v-if="isDark" class="h-5 w-5" />
         <Moon v-else class="h-5 w-5" />
         <span class="sr-only">Toggle theme</span>
       </Button>
     </div>
-    <LoginForm v-if="!nostrStore.isLoggedIn" />
-    <ChatInterface v-else />
+
+    <Transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <LoginForm v-if="!nostrStore.isLoggedIn" />
+      <ChatInterface v-else />
+    </Transition>
   </main>
 </template>
 

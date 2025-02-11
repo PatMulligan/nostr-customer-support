@@ -1,15 +1,66 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { Send } from 'lucide-vue-next'
 import { useNostrStore } from '@/stores/nostr'
+import type { DirectMessage } from '@/types/nostr'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const nostrStore = useNostrStore()
 const input = ref('')
 const inputLength = computed(() => input.value.trim().length)
+const messagesEndRef = ref<HTMLDivElement | null>(null)
+
+// Group messages by sender and time
+interface MessageGroup {
+  sent: boolean
+  messages: DirectMessage[]
+  timestamp: number
+}
+
+const groupedMessages = computed<MessageGroup[]>(() => {
+  const groups: MessageGroup[] = []
+  let currentGroup: MessageGroup | null = null
+
+  for (const message of nostrStore.currentMessages) {
+    // Start a new group if:
+    // 1. No current group
+    // 2. Different sender than last message
+    // 3. More than 2 minutes since last message
+    if (!currentGroup || 
+        currentGroup.sent !== message.sent ||
+        message.created_at - currentGroup.messages[currentGroup.messages.length - 1].created_at > 120) {
+      currentGroup = {
+        sent: message.sent,
+        messages: [],
+        timestamp: message.created_at
+      }
+      groups.push(currentGroup)
+    }
+    currentGroup.messages.push(message)
+  }
+  return groups
+})
+
+// Scroll to bottom when new messages arrive
+watch(() => nostrStore.currentMessages.length, () => {
+  nextTick(() => {
+    scrollToBottom()
+  })
+})
+
+onMounted(() => {
+  scrollToBottom()
+})
+
+function scrollToBottom() {
+  if (messagesEndRef.value) {
+    messagesEndRef.value.scrollIntoView({ behavior: 'smooth' })
+  }
+}
 
 const sendMessage = async (event: Event) => {
   event.preventDefault()
@@ -19,42 +70,111 @@ const sendMessage = async (event: Event) => {
   input.value = ''
 }
 
-const getMessageClasses = (sent: boolean) => {
+const formatTime = (timestamp: number) => {
+  return new Date(timestamp * 1000).toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
+const formatDate = (timestamp: number) => {
+  const date = new Date(timestamp * 1000)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today'
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday'
+  }
+  return date.toLocaleDateString()
+}
+
+const getMessageGroupClasses = (sent: boolean) => {
   return [
-    'flex w-max max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm',
+    'group flex flex-col gap-0.5 animate-in slide-in-from-bottom-2',
+    sent ? 'items-end' : 'items-start'
+  ]
+}
+
+const getMessageBubbleClasses = (sent: boolean, isFirst: boolean, isLast: boolean) => {
+  return [
+    'px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap inline-block',
     sent 
-      ? 'ml-auto bg-dark-mauve dark:bg-dark-mauve text-light-base dark:text-dark-base' 
-      : 'bg-light-surface0 dark:bg-dark-surface0'
+      ? 'bg-[#cba6f7] text-[#1e1e2e]' // Catppuccin Mocha mauve for sent messages
+      : 'bg-[#313244] text-[#cdd6f4]', // Catppuccin Mocha surface0 for received messages
+    // First message in group
+    isFirst && (sent ? 'rounded-t-xl rounded-l-xl' : 'rounded-t-xl rounded-r-xl'),
+    // Last message in group
+    isLast && (sent ? 'rounded-b-xl rounded-l-xl' : 'rounded-b-xl rounded-r-xl'),
+    // Single message
+    isFirst && isLast && 'rounded-2xl',
+    // Middle messages
+    !isFirst && !isLast && (sent ? 'rounded-l-xl' : 'rounded-r-xl'),
+    // Add shadow and hover effect
+    'shadow-sm hover:shadow-md transition-shadow'
   ]
 }
 </script>
 
 <template>
-  <Card class="bg-light-mantle dark:bg-dark-mantle border-light-surface1 dark:border-dark-surface1">
-    <CardHeader class="flex flex-row items-center border-b border-light-surface1 dark:border-dark-surface1">
+  <Card class="h-[calc(100vh-2rem)] bg-[#181825] border-[#313244] shadow-xl">
+    <CardHeader class="flex flex-row items-center border-b border-[#313244] py-3 px-4">
       <div class="flex items-center space-x-4">
-        <Avatar class="bg-light-surface0 dark:bg-dark-surface0">
-          <AvatarFallback class="text-light-text dark:text-dark-text">SA</AvatarFallback>
+        <Avatar class="h-10 w-10 bg-[#313244] ring-2 ring-[#cba6f7] ring-offset-2 ring-offset-[#181825]">
+          <AvatarFallback class="text-base font-medium text-[#cdd6f4]">SA</AvatarFallback>
         </Avatar>
         <div>
-          <p class="text-sm font-medium leading-none text-light-text dark:text-dark-text">Support Agent</p>
+          <p class="font-medium leading-none text-[#cdd6f4]">Support Agent</p>
+          <p class="text-sm text-[#a6adc8] mt-1">Online</p>
         </div>
       </div>
     </CardHeader>
 
-    <CardContent class="p-4 space-y-4 bg-light-base dark:bg-dark-base">
-      <div class="space-y-4">
-        <div
-          v-for="message in nostrStore.currentMessages"
-          :key="message.id"
-          :class="getMessageClasses(message.sent)"
-        >
-          {{ message.content }}
+    <CardContent class="p-0 h-[calc(100%-8rem)] bg-[#1e1e2e]">
+      <ScrollArea class="h-full">
+        <div class="flex flex-col gap-3 p-4">
+          <template v-for="(group, groupIndex) in groupedMessages" :key="groupIndex">
+            <!-- Date separator if first message of the day -->
+            <div 
+              v-if="groupIndex === 0 || 
+                    formatDate(group.timestamp) !== formatDate(groupedMessages[groupIndex - 1].timestamp)"
+              class="flex justify-center my-3"
+            >
+              <div class="px-3 py-1 rounded-full bg-[#313244]/50 text-xs font-medium text-[#cdd6f4]">
+                {{ formatDate(group.timestamp) }}
+              </div>
+            </div>
+
+            <!-- Message group -->
+            <div :class="getMessageGroupClasses(group.sent)">
+              <div class="flex flex-col gap-0.5">
+                <div
+                  v-for="(message, messageIndex) in group.messages"
+                  :key="message.id"
+                  :class="getMessageBubbleClasses(
+                    group.sent,
+                    messageIndex === 0,
+                    messageIndex === group.messages.length - 1
+                  )"
+                >
+                  {{ message.content }}
+                </div>
+              </div>
+              <span 
+                class="text-[11px] text-[#a6adc8] px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {{ formatTime(group.timestamp) }}
+              </span>
+            </div>
+          </template>
+          <div ref="messagesEndRef" />
         </div>
-      </div>
+      </ScrollArea>
     </CardContent>
 
-    <CardFooter class="border-t border-light-surface1 dark:border-dark-surface1 bg-light-mantle dark:bg-dark-mantle">
+    <CardFooter class="border-t border-[#313244] bg-[#181825] p-4">
       <form
         @submit="sendMessage"
         class="flex w-full items-center space-x-2"
@@ -63,14 +183,14 @@ const getMessageClasses = (sent: boolean) => {
           id="message"
           v-model="input"
           placeholder="Type your message..."
-          class="flex-1 bg-light-base dark:bg-dark-base border-light-surface1 dark:border-dark-surface1"
+          class="flex-1 bg-[#1e1e2e] border-[#313244] text-[#cdd6f4] placeholder:text-[#6c7086] focus:ring-2 focus:ring-[#cba6f7] transition-shadow"
           autocomplete="off"
         />
         <Button 
           type="submit" 
           size="icon" 
           :disabled="inputLength === 0"
-          class="bg-dark-mauve dark:bg-dark-mauve text-light-base dark:text-dark-base hover:bg-dark-mauve/90"
+          class="bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-md"
         >
           <Send class="h-4 w-4" />
           <span class="sr-only">Send</span>
@@ -78,4 +198,21 @@ const getMessageClasses = (sent: boolean) => {
       </form>
     </CardFooter>
   </Card>
-</template> 
+</template>
+
+<style scoped>
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style> 

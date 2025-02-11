@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { NostrEvent, NostrProfile, NostrAccount, DirectMessage } from '../types/nostr'
 import { connectToRelay, publishEvent, encryptMessage, decryptMessage, getEventHash, signEvent, getPublicKey } from '../lib/nostr'
 
@@ -9,17 +9,44 @@ const DEFAULT_RELAYS = [
 
 export const useNostrStore = defineStore('nostr', () => {
   // State
-  const account = ref<NostrAccount | null>(null)
+  const account = ref<NostrAccount | null>(JSON.parse(localStorage.getItem('nostr_account') || 'null'))
   const profiles = ref<Map<string, NostrProfile>>(new Map())
   const messages = ref<Map<string, DirectMessage[]>>(new Map())
   const activeChat = ref<string | null>(null)
   const relayPool = ref<any[]>([])
+
+  // Watch account changes and persist to localStorage
+  watch(account, (newAccount) => {
+    if (newAccount) {
+      localStorage.setItem('nostr_account', JSON.stringify(newAccount))
+    } else {
+      localStorage.removeItem('nostr_account')
+    }
+  }, { deep: true })
 
   // Computed
   const isLoggedIn = computed(() => !!account.value)
   const currentMessages = computed(() => 
     activeChat.value ? messages.value.get(activeChat.value) || [] : []
   )
+
+  // Initialize connection if account exists
+  async function init() {
+    if (account.value) {
+      // Connect to relays
+      const connectedRelays = await Promise.all(
+        account.value.relays.map(relay => connectToRelay(relay.url))
+      )
+      
+      relayPool.value = connectedRelays.filter(relay => relay !== null)
+
+      // Subscribe to messages
+      await subscribeToMessages()
+
+      // Load profiles
+      await loadProfiles()
+    }
+  }
 
   // Actions
   async function login(privkey: string) {
@@ -31,18 +58,7 @@ export const useNostrStore = defineStore('nostr', () => {
       relays: DEFAULT_RELAYS.map(url => ({ url, read: true, write: true }))
     }
 
-    // Connect to relays
-    const connectedRelays = await Promise.all(
-      account.value.relays.map(relay => connectToRelay(relay.url))
-    )
-    
-    relayPool.value = connectedRelays.filter(relay => relay !== null)
-
-    // Subscribe to messages
-    await subscribeToMessages()
-
-    // Load profiles
-    await loadProfiles()
+    await init()
   }
 
   async function loadProfiles() {
@@ -79,6 +95,9 @@ export const useNostrStore = defineStore('nostr', () => {
     account.value = null
     relayPool.value.forEach(relay => relay.close())
     relayPool.value = []
+    messages.value.clear()
+    profiles.value.clear()
+    activeChat.value = null
   }
 
   async function sendMessage(to: string, content: string) {
@@ -164,9 +183,11 @@ export const useNostrStore = defineStore('nostr', () => {
     isLoggedIn,
     currentMessages,
     // Actions
+    init,
     login,
     logout,
     sendMessage,
-    subscribeToMessages
+    subscribeToMessages,
+    loadProfiles
   }
 }) 
