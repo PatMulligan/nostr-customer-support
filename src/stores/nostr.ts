@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { NostrEvent, NostrProfile, NostrAccount, DirectMessage } from '../types/nostr'
+import { nostrService } from '../services/NostrService'
+import { messageService } from '../services/MessageService'
 import { connectToRelay, publishEvent, encryptMessage, decryptMessage, getEventHash, signEvent, getPublicKey, npubToHex } from '../lib/nostr'
 
 const DEFAULT_RELAYS = [
@@ -50,41 +52,52 @@ export const useNostrStore = defineStore('nostr', () => {
     throw new Error('NostrTools failed to load within timeout period')
   }
 
+  // Utility functions
+  function resetState() {
+    messages.value.clear()
+    profiles.value.clear()
+    processedMessageIds.value.clear()
+    
+    // Close existing connections
+    relayPool.value.forEach(relay => relay.close())
+    relayPool.value = []
+  }
+
+  async function connectToRelays(relayConfigs: NostrRelayConfig[]): Promise<any[]> {
+    const connectedRelays = await Promise.all(
+      relayConfigs.map(relay => nostrService.connectToRelay(relay.url))
+    )
+    
+    return connectedRelays.filter(relay => relay !== null)
+  }
+
   // Modified init function
   async function init() {
     if (!isInitialized.value) {
-      await waitForNostrTools()
-      // Convert NPUB to hex after NostrTools is loaded
-      supportPubkey.value = npubToHex(SUPPORT_NPUB)
+      await nostrService.init()
+      supportPubkey.value = nostrService.npubToHex(SUPPORT_NPUB)
       isInitialized.value = true
     }
 
     if (account.value) {
-      // Clear existing state
-      messages.value.clear()
-      profiles.value.clear()
-      processedMessageIds.value.clear()
-      
-      // Close existing connections
-      relayPool.value.forEach(relay => relay.close())
-      relayPool.value = []
-
-      // Connect to relays
-      const connectedRelays = await Promise.all(
-        account.value.relays.map(relay => connectToRelay(relay.url))
-      )
-      
-      relayPool.value = connectedRelays.filter(relay => relay !== null)
-
-      // Subscribe to messages and load history
-      await Promise.all([
-        subscribeToMessages(),
-        loadProfiles()
-      ])
-
-      // Set active chat to support agent's hex pubkey
-      activeChat.value = supportPubkey.value
+      await initializeConnection()
     }
+  }
+
+  async function initializeConnection() {
+    // Clear existing state
+    resetState()
+    
+    // Connect to relays
+    relayPool.value = await connectToRelays(account.value!.relays)
+
+    // Initialize subscriptions
+    await Promise.all([
+      subscribeToMessages(),
+      loadProfiles()
+    ])
+
+    activeChat.value = supportPubkey.value
   }
 
   // Actions
@@ -317,5 +330,7 @@ export const useNostrStore = defineStore('nostr', () => {
     loadProfiles,
     isInitialized,
     supportPubkey,
+    resetState,
+    connectToRelays,
   }
 }) 
