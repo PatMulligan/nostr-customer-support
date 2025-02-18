@@ -31,7 +31,7 @@ npm install
 
 3. Configure environment variables:
 ```bash
-cp .env.sample .env
+cp .env.example .env
 ```
 
 Edit `.env` and set your support agent's public key:
@@ -98,15 +98,9 @@ The following environment variables are required:
 - `VITE_SUPPORT_NPUB`: The npub of the support agent
 - `VITE_DEFAULT_RELAYS`: JSON array of default relay URLs
 
-Example minimal configuration (.env.example):
+Example configuration (.env.example):
 ```env
 VITE_SUPPORT_NPUB=
-VITE_DEFAULT_RELAYS=["wss://relay.damus.io"]
-```
-
-Example production configuration (.env.sample):
-```env
-VITE_SUPPORT_NPUB=npub1...
 VITE_DEFAULT_RELAYS=["wss://relay.damus.io","wss://nos.lol","wss://relay.nostr.band"]
 ```
 
