@@ -64,6 +64,8 @@ The built files will be in the `dist` directory, ready for deployment.
 3. Chat history is preserved and loaded from connected relays
 4. Support staff can monitor and respond to messages using their Nostr client
 
+> ⚠️ **Security Warning**: When logging in with a Nostr private key, please use only throwaway keys or keys you are comfortable potentially being exposed. Web browsers can be vulnerable to various security risks, so it's best practice to never input valuable private keys into web applications. Consider generating a new key specifically for customer support interactions.
+
 ## Technology Stack
 
 - Vue 3 with Composition API
