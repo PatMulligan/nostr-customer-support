@@ -8,7 +8,7 @@ const DEFAULT_RELAYS = [
 ]
 
 // Get support agent's public key from environment variable
-const SUPPORT_NPUB = npubToHex(import.meta.env.VITE_SUPPORT_NPUB)
+const SUPPORT_NPUB = import.meta.env.VITE_SUPPORT_NPUB
 
 export const useNostrStore = defineStore('nostr', () => {
   // State
@@ -18,6 +18,8 @@ export const useNostrStore = defineStore('nostr', () => {
   const activeChat = ref<string | null>(null)
   const relayPool = ref<any[]>([])
   const processedMessageIds = ref(new Set<string>())
+  const isInitialized = ref(false)
+  const supportPubkey = ref<string | null>(null)
 
   // Watch account changes and persist to localStorage
   watch(account, (newAccount) => {
@@ -34,8 +36,29 @@ export const useNostrStore = defineStore('nostr', () => {
     activeChat.value ? messages.value.get(activeChat.value) || [] : []
   )
 
-  // Initialize connection if account exists
+  // Initialize function to check NostrTools availability
+  async function waitForNostrTools(timeout = 5000): Promise<void> {
+    const start = Date.now()
+    
+    while (Date.now() - start < timeout) {
+      if (window.NostrTools) {
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    throw new Error('NostrTools failed to load within timeout period')
+  }
+
+  // Modified init function
   async function init() {
+    if (!isInitialized.value) {
+      await waitForNostrTools()
+      // Convert NPUB to hex after NostrTools is loaded
+      supportPubkey.value = npubToHex(SUPPORT_NPUB)
+      isInitialized.value = true
+    }
+
     if (account.value) {
       // Clear existing state
       messages.value.clear()
@@ -59,8 +82,8 @@ export const useNostrStore = defineStore('nostr', () => {
         loadProfiles()
       ])
 
-      // Set active chat to support agent
-      activeChat.value = SUPPORT_NPUB
+      // Set active chat to support agent's hex pubkey
+      activeChat.value = supportPubkey.value
     }
   }
 
@@ -134,33 +157,38 @@ export const useNostrStore = defineStore('nostr', () => {
   async function sendMessage(to: string, content: string) {
     if (!account.value) return
 
-    const encrypted = await encryptMessage(account.value.privkey, to, content)
-    const event: NostrEvent = {
-      kind: 4,
-      pubkey: account.value.pubkey,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [['p', to]],
-      content: encrypted,
-      id: '',
-      sig: ''
+    try {
+      const encrypted = await encryptMessage(account.value.privkey, to, content)
+      const event: NostrEvent = {
+        kind: 4,
+        pubkey: account.value.pubkey,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [['p', to]],
+        content: encrypted,
+        id: '',
+        sig: ''
+      }
+
+      event.id = getEventHash(event)
+      event.sig = await signEvent(event, account.value.privkey)
+
+      // Add to local messages first
+      const dm: DirectMessage = {
+        id: event.id,
+        pubkey: to,
+        content,
+        created_at: event.created_at,
+        sent: true
+      }
+
+      await addMessage(to, dm)
+
+      // Then publish to relays
+      await publishEvent(event, account.value.relays)
+    } catch (err) {
+      console.error('Failed to send message:', err)
+      throw err
     }
-
-    event.id = getEventHash(event)
-    event.sig = await signEvent(event, account.value.privkey)
-
-    // Add to local messages first
-    const dm: DirectMessage = {
-      id: event.id,
-      pubkey: to,
-      content,
-      created_at: event.created_at,
-      sent: true
-    }
-
-    await addMessage(to, dm)
-
-    // Then publish to relays
-    await publishEvent(event, account.value.relays)
   }
 
   async function subscribeToMessages() {
@@ -177,14 +205,12 @@ export const useNostrStore = defineStore('nostr', () => {
     const sentFilter = {
       kinds: [4],
       authors: [account.value.pubkey],
-      '#p': [SUPPORT_NPUB],
+      '#p': [supportPubkey.value],
       since: 0 // Get all historical messages
     }
 
     const subscribeToRelay = (relay: any) => {
       return new Promise((resolve) => {
-        let receivedCount = 0
-        let sentCount = 0
         let eoseCount = 0
 
         // Subscribe to received messages
@@ -197,7 +223,6 @@ export const useNostrStore = defineStore('nostr', () => {
               return
             }
 
-            receivedCount++
             const decrypted = await decryptMessage(
               account.value!.privkey,
               event.pubkey,
@@ -233,22 +258,21 @@ export const useNostrStore = defineStore('nostr', () => {
               return
             }
 
-            sentCount++
             const decrypted = await decryptMessage(
               account.value!.privkey,
-              SUPPORT_NPUB,
+              supportPubkey.value,
               event.content
             )
 
             const dm: DirectMessage = {
               id: event.id,
-              pubkey: SUPPORT_NPUB,
+              pubkey: supportPubkey.value,
               content: decrypted,
               created_at: event.created_at,
               sent: true
             }
 
-            await addMessage(SUPPORT_NPUB, dm)
+            await addMessage(supportPubkey.value, dm)
           } catch (err) {
             console.error('Failed to decrypt sent message:', err)
           }
@@ -257,15 +281,15 @@ export const useNostrStore = defineStore('nostr', () => {
         // Listen for end of stored events
         receivedSub.on('eose', () => {
           eoseCount++
-          if (eoseCount >= 2) { // Both subscriptions have finished
-            resolve(true)
+          if (eoseCount >= 2) { // Both subscriptions have finished loading history
+            resolve(true) // Resolve but keep subscriptions active
           }
         })
 
         sentSub.on('eose', () => {
           eoseCount++
-          if (eoseCount >= 2) { // Both subscriptions have finished
-            resolve(true)
+          if (eoseCount >= 2) { // Both subscriptions have finished loading history
+            resolve(true) // Resolve but keep subscriptions active
           }
         })
       })
@@ -290,6 +314,8 @@ export const useNostrStore = defineStore('nostr', () => {
     logout,
     sendMessage,
     subscribeToMessages,
-    loadProfiles
+    loadProfiles,
+    isInitialized,
+    supportPubkey,
   }
 }) 

@@ -1,4 +1,5 @@
 import type { NostrEvent, NostrRelayConfig } from '../types/nostr'
+import { useNostrStore } from '../stores/nostr'
 
 declare global {
   interface Window {
@@ -67,11 +68,18 @@ export function verifySignature(event: NostrEvent): boolean {
   return window.NostrTools.verifySignature(event)
 }
 
+function ensureNostrTools() {
+  if (typeof window.NostrTools === 'undefined') {
+    throw new Error('NostrTools is not loaded. Please check if nostr.bundle.js is properly loaded.')
+  }
+}
+
 export function npubToHex(npub: string): string {
+  ensureNostrTools()
   try {
     const { type, data } = window.NostrTools.nip19.decode(npub)
     if (type !== 'npub') throw new Error('Invalid npub')
-    return data
+    return data as string
   } catch (err) {
     console.error('Failed to decode npub:', err)
     throw err

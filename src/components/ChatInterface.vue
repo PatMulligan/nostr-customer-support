@@ -11,8 +11,9 @@ if (!SUPPORT_NPUB) {
   throw new Error('VITE_SUPPORT_NPUB environment variable is not set')
 }
 
-onMounted(() => {
+onMounted(async () => {
   try {
+    await nostrStore.init()
     // Convert npub to hex before setting as active chat
     const supportPubkeyHex = npubToHex(SUPPORT_NPUB)
     nostrStore.activeChat = supportPubkeyHex
