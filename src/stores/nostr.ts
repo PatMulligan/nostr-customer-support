@@ -5,9 +5,8 @@ import { nostrService } from '../services/NostrService'
 import { messageService } from '../services/MessageService'
 import { connectToRelay, publishEvent, encryptMessage, decryptMessage, getEventHash, signEvent, getPublicKey, npubToHex } from '../lib/nostr'
 
-const DEFAULT_RELAYS = [
-  'wss://nostr.atitlan.io'
-]
+// Replace the hardcoded DEFAULT_RELAYS with environment variable
+const DEFAULT_RELAYS = JSON.parse(import.meta.env.VITE_DEFAULT_RELAYS || '["wss://nostr.atitlan.io"]')
 
 // Get support agent's public key from environment variable
 const SUPPORT_NPUB = import.meta.env.VITE_SUPPORT_NPUB
