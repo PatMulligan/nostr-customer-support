@@ -1,70 +1,210 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
 
 @layer base {
-
   :root {
-    /* Catppuccin Latte */
-    --color-background: #eff1f5;
-    --color-foreground: #4c4f69;
-    --color-card: #e6e9ef;
-    --color-card-foreground: #4c4f69;
-    --color-popover: #e6e9ef;
-    --color-popover-foreground: #4c4f69;
-    --color-primary: #1e66f5;
-    --color-primary-foreground: #eff1f5;
-    --color-secondary: #ccd0da;
-    --color-secondary-foreground: #4c4f69;
-    --color-muted: #ccd0da;
-    --color-muted-foreground: #6c6f85;
-    --color-accent: #dc8a78;
-    --color-accent-foreground: #eff1f5;
-    --color-destructive: #d20f39;
-    --color-destructive-foreground: #eff1f5;
-    --color-border: #bcc0cc;
-    --color-input: #bcc0cc;
-    --color-ring: #1e66f5;
-    --radius: 0.5rem;
-    --popover: 220 23% 95%;
+    --background: 227 92% 95%;
+    --foreground: 234 16% 35%;
+
+    --card: 225 23% 92%;
+    --card-foreground: 234 16% 35%;
+
+    --popover: 225 23% 92%;
     --popover-foreground: 234 16% 35%;
-    /* Fallback colors for older browsers */
-    --fallback-background: #ffffff;
-    --fallback-popover: #f5f5f5;
+
+    --primary: 220 91% 54%;
+    --primary-foreground: 227 92% 95%;
+
+    --secondary: 227 23% 83%;
+    --secondary-foreground: 234 16% 35%;
+
+    --muted: 227 23% 83%;
+    --muted-foreground: 231 11% 47%;
+
+    --accent: 11 83% 67%;
+    --accent-foreground: 227 92% 95%;
+
+    --destructive: 347 87% 44%;
+    --destructive-foreground: 227 92% 95%;
+
+    --border: 228 17% 77%;
+    --input: 228 17% 77%;
+    --ring: 220 91% 54%;
+
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Catppuccin Macchiato - we'll use the same colors for dark mode */
-    --color-background: #24273a;
-    --color-foreground: #cad3f5;
-    --color-card: #1e2030;
-    --color-card-foreground: #cad3f5;
-    --color-popover: #1e2030;
-    --color-popover-foreground: #cad3f5;
-    --color-primary: #8aadf4;
-    --color-primary-foreground: #24273a;
-    --color-secondary: #363a4f;
-    --color-secondary-foreground: #cad3f5;
-    --color-muted: #363a4f;
-    --color-muted-foreground: #a5adcb;
-    --color-accent: #f4dbd6;
-    --color-accent-foreground: #24273a;
-    --color-destructive: #ed8796;
-    --color-destructive-foreground: #24273a;
-    --color-border: #363a4f;
-    --color-input: #363a4f;
-    --color-ring: #8aadf4;
-    --popover: 240 21% 15%;
-    --popover-foreground: 226 64% 88%;
-    /* Fallback colors for older browsers */
-    --fallback-background: #1e1e2e;
-    --fallback-popover: #313244;
-  }
+    --background: 233 31% 18%;
+    --foreground: 227 68% 88%;
 
+    --card: 234 32% 15%;
+    --card-foreground: 227 68% 88%;
+
+    --popover: 234 32% 15%;
+    --popover-foreground: 227 68% 88%;
+
+    --primary: 220 83% 76%;
+    --primary-foreground: 233 31% 18%;
+
+    --secondary: 233 25% 26%;
+    --secondary-foreground: 227 68% 88%;
+
+    --muted: 233 25% 26%;
+    --muted-foreground: 225 27% 72%;
+
+    --accent: 11 77% 90%;
+    --accent-foreground: 233 31% 18%;
+
+    --destructive: 351 74% 76%;
+    --destructive-foreground: 233 31% 18%;
+
+    --border: 233 25% 26%;
+    --input: 233 25% 26%;
+    --ring: 220 83% 76%;
+  }
+}
+
+@layer base {
   * {
     @apply box-border;
   }
   
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background) / var(--tw-bg-opacity, 1));
+  }
+  .bg-foreground {
+    background-color: hsl(var(--foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-card {
+    background-color: hsl(var(--card) / var(--tw-bg-opacity, 1));
+  }
+  .bg-card-foreground {
+    background-color: hsl(var(--card-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-popover {
+    background-color: hsl(var(--popover) / var(--tw-bg-opacity, 1));
+  }
+  .bg-popover-foreground {
+    background-color: hsl(var(--popover-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-primary {
+    background-color: hsl(var(--primary) / var(--tw-bg-opacity, 1));
+  }
+  .bg-primary-foreground {
+    background-color: hsl(var(--primary-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-secondary {
+    background-color: hsl(var(--secondary) / var(--tw-bg-opacity, 1));
+  }
+  .bg-secondary-foreground {
+    background-color: hsl(var(--secondary-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-muted {
+    background-color: hsl(var(--muted) / var(--tw-bg-opacity, 1));
+  }
+  .bg-muted-foreground {
+    background-color: hsl(var(--muted-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-accent {
+    background-color: hsl(var(--accent) / var(--tw-bg-opacity, 1));
+  }
+  .bg-accent-foreground {
+    background-color: hsl(var(--accent-foreground) / var(--tw-bg-opacity, 1));
+  }
+  .bg-destructive {
+    background-color: hsl(var(--destructive) / var(--tw-bg-opacity, 1));
+  }
+  .bg-destructive-foreground {
+    background-color: hsl(var(--destructive-foreground) / var(--tw-bg-opacity, 1));
+  }
+
+  .text-background {
+    color: hsl(var(--background) / var(--tw-text-opacity, 1));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-card {
+    color: hsl(var(--card) / var(--tw-text-opacity, 1));
+  }
+  .text-card-foreground {
+    color: hsl(var(--card-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-popover {
+    color: hsl(var(--popover) / var(--tw-text-opacity, 1));
+  }
+  .text-popover-foreground {
+    color: hsl(var(--popover-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-primary {
+    color: hsl(var(--primary) / var(--tw-text-opacity, 1));
+  }
+  .text-primary-foreground {
+    color: hsl(var(--primary-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-secondary {
+    color: hsl(var(--secondary) / var(--tw-text-opacity, 1));
+  }
+  .text-secondary-foreground {
+    color: hsl(var(--secondary-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-muted {
+    color: hsl(var(--muted) / var(--tw-text-opacity, 1));
+  }
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-accent {
+    color: hsl(var(--accent) / var(--tw-text-opacity, 1));
+  }
+  .text-accent-foreground {
+    color: hsl(var(--accent-foreground) / var(--tw-text-opacity, 1));
+  }
+  .text-destructive {
+    color: hsl(var(--destructive) / var(--tw-text-opacity, 1));
+  }
+  .text-destructive-foreground {
+    color: hsl(var(--destructive-foreground) / var(--tw-text-opacity, 1));
+  }
+}
+
+/* Add support for ring colors */
+@layer utilities {
+  .ring-border {
+    --tw-ring-color: hsl(var(--border) / var(--tw-ring-opacity, 1));
+  }
+  .ring-primary {
+    --tw-ring-color: hsl(var(--primary) / var(--tw-ring-opacity, 1));
+  }
+  .ring-background {
+    --tw-ring-color: hsl(var(--background) / var(--tw-ring-opacity, 1));
+  }
+}
+
+/* Add support for border colors */
+@layer utilities {
+  .border-border {
+    border-color: hsl(var(--border) / var(--tw-border-opacity, 1));
+  }
+  .border-primary {
+    border-color: hsl(var(--primary) / var(--tw-border-opacity, 1));
+  }
+  .border-background {
+    border-color: hsl(var(--background) / var(--tw-border-opacity, 1));
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .select-content {
+    background-color: hsl(var(--background));
   }
 }
 
@@ -158,8 +298,3 @@
   /*   --color-ring: hsl(6 93% 59%); /* red */ */
   /* } */
 
-@supports not (backdrop-filter: blur(1px)) {
-  .select-content {
-    background-color: var(--fallback-background) !important;
-  }
-}
